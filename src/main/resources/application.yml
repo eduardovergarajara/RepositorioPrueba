@@ -1,0 +1,9 @@
+spring:
+  application:
+    name: microservice
+
+
+clients:
+  clienteEjemplo:
+    baseUrl: https://www.ejemplo.cl
+    endpointPost: postExample
