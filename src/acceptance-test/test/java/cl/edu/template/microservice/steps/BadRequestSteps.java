@@ -1,0 +1,110 @@
+package cl.edu.template.microservice.steps;
+
+import cl.edu.template.microservice.CucumberSpringContextConfiguration;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.cucumber.java.AfterStep;
+import io.cucumber.java.Scenario;
+import io.cucumber.java.en.Given;
+import io.cucumber.java.en.Then;
+import io.cucumber.java.en.When;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.MediaType;
+import org.springframework.web.reactive.function.BodyInserters;
+import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+// Ya NO EXTENDEMOS CucumberSpringContextConfiguration
+public class BadRequestSteps {
+/*
+    // Estas variables ahora se inyectan
+    private final WebClient webClient;
+    private final ObjectMapper objectMapper;
+    private final int port; // Obtener el puerto de la configuración
+
+    private String requestBody;
+    private String latestResponseBody;
+    private HttpStatusCode latestResponseStatus;
+    private Throwable latestError;
+    private String latestCurlCommand;
+
+    // Constructor para inyección de dependencias
+    public BadRequestSteps(CucumberSpringContextConfiguration config, WebClient webClient, ObjectMapper objectMapper) {
+        this.port = config.getPort(); // Obtener el puerto de la instancia de configuración
+        this.webClient = webClient; // Usar el WebClient inyectado
+        this.objectMapper = objectMapper; // Usar el ObjectMapper inyectado
+    }
+
+    @Given("el body del request:")
+    public void elCuerpoDeLaPeticion(String docString) {
+        this.requestBody = docString;
+    }
+
+    @When("envío una petición POST a {string}")
+    public void envioUnaPeticionPOSTA(String path) {
+        String url = "http://localhost:" + port + path;
+
+        // GENERACIÓN DEL CURL
+        StringBuilder curl = new StringBuilder("curl -X POST ");
+        curl.append(url);
+        curl.append(" -H \"Content-Type: application/json\"");
+        if (requestBody != null && !requestBody.isEmpty()) {
+            String escapedBody = requestBody.replace("\"", "\\\"");
+            curl.append(" -d \"").append(escapedBody).append("\"");
+        }
+        this.latestCurlCommand = curl.toString();
+        // FIN GENERACIÓN DEL CURL
+
+        try {
+            webClient.post().uri(path) // WebClient ya tiene el baseUrl, solo necesitas el path
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(BodyInserters.fromValue(requestBody))
+                    .retrieve()
+                    .toEntity(String.class)
+                    .doOnSuccess(response -> {
+                        latestResponseStatus = response.getStatusCode();
+                        latestResponseBody = response.getBody();
+                        latestError = null;
+                    })
+                    .doOnError(WebClientResponseException.class, e -> {
+                        latestResponseStatus = e.getStatusCode();
+                        latestResponseBody = e.getResponseBodyAsString();
+                        latestError = e;
+                    })
+                    .block();
+        } catch (Exception e) {
+            latestError = e;
+        }
+    }
+
+    @Then("la respuesta HTTP debe ser {int}")
+    public void laRespuestaHTTPDebeSer(int statusCode) {
+        if (latestResponseStatus != null) {
+            assertEquals(statusCode, latestResponseStatus.value(), "El código de estado HTTP no coincide");
+        } else if (latestError != null) {
+            fail("Se esperaba una respuesta con status " + statusCode + ", pero la petición falló con: " + latestError.getMessage());
+        } else {
+            fail("No se recibió ninguna respuesta ni error.");
+        }
+    }
+
+    @Then("el cuerpo de la respuesta JSON debe contener:")
+    public void elCuerpoDeLaRespuestaJSONDebeContener(String expectedJson) throws Exception {
+        assertNotNull(latestResponseBody, "El cuerpo de la respuesta no puede ser nulo.");
+
+        JsonNode expectedJsonNode = objectMapper.readTree(expectedJson);
+        JsonNode actualJsonNode = objectMapper.readTree(latestResponseBody);
+
+        assertEquals(expectedJsonNode, actualJsonNode, "El cuerpo de la respuesta JSON no coincide con el JSON esperado.");
+    }
+
+    @AfterStep
+    public void addCurlToReport(Scenario scenario) {
+        if (latestCurlCommand != null && !latestCurlCommand.isEmpty()) {
+            scenario.attach(latestCurlCommand, "text/plain", "Comando cURL Ejecutado");
+            latestCurlCommand = null;
+        }
+    }*/
+}
