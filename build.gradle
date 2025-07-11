@@ -4,8 +4,6 @@ plugins {
 	id 'groovy'
 	id 'org.springframework.boot' version '3.5.3'
 	id 'io.spring.dependency-management' version '1.1.7'
-
-
 }
 
 group = 'cl.edu.template'
@@ -27,35 +25,86 @@ repositories {
 	mavenCentral()
 }
 
+sourceSets {
+	acceptanceTest {
+		java {
+			srcDirs = ['src/acceptance-test/test/java']
+		}
+		resources {
+			srcDirs = ['src/acceptance-test/test/resources']
+		}
+		compileClasspath += sourceSets.main.output
+		runtimeClasspath += sourceSets.main.output
+	}
+}
+
+configurations {
+	acceptanceTestImplementation.extendsFrom testImplementation
+	acceptanceTestRuntimeOnly.extendsFrom testRuntimeOnly
+}
+
 dependencies {
+	// --- Spring Boot Starters y Dependencias Core ---
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
+
+	// --- Lombok (Generación de Código) ---
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	testImplementation 'io.projectreactor:reactor-test'
 
-	// Spock test dependencies
+	// --- Dependencias para Tests Unitarios (Spring Boot Test & Spock) ---
+	testImplementation 'org.springframework.boot:spring-boot-starter-test' // Incluye JUnit Jupiter, Mockito, Spring Test, etc.
+	testImplementation 'io.projectreactor:reactor-test' // Para testing de código reactivo
 	testImplementation 'org.spockframework:spock-core:2.4-M1-groovy-4.0'
 	testImplementation 'org.spockframework:spock-spring:2.4-M1-groovy-4.0'
 
-	// Junit dependencies
-	testImplementation 'org.junit.jupiter:junit-jupiter:5.11.1'
-	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	// --- Dependencias para Tests de Aceptación (Cucumber & Integración con Spring) ---
+	implementation 'io.cucumber:cucumber-java:7.18.0' // Core Cucumber JVM para definiciones de pasos en Java
+	implementation 'io.cucumber:cucumber-junit-platform-engine:7.18.0' // Para ejecutar Cucumber en JUnit Platform
+	acceptanceTestImplementation 'io.cucumber:cucumber-spring:7.18.0' // Integración de Spring con Cucumber
 
+	// --- Dependencias explícitas de JUnit Platform para Tests de Aceptación ---
+	// (Generalmente spring-boot-starter-test ya las incluye,
+	// se mantienen si necesitas una versión específica o para compatibilidad explícita)
+	acceptanceTestImplementation 'org.junit.platform:junit-platform-engine:1.11.1'
+	acceptanceTestRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.11.1'
+	acceptanceTestImplementation 'org.junit.platform:junit-platform-suite-api:1.11.1' // Necesario para la anotación @Suite
+	acceptanceTestImplementation 'org.junit.jupiter:junit-jupiter-engine:5.11.1'
+}
+
+tasks.named('compileAcceptanceTestJava', JavaCompile) {
+	options.compilerArgs << "-parameters"
+}
+
+task acceptanceTest(type: Test) {
+	description = 'Runs acceptance tests with Cucumber.'
+	group = 'verification'
+
+	dependsOn sourceSets.acceptanceTest.output
+
+	testClassesDirs = sourceSets.acceptanceTest.output.classesDirs
+	classpath = sourceSets.acceptanceTest.runtimeClasspath
+
+	useJUnitPlatform()
+
+	systemProperties = [
+			'cucumber.features': 'src/acceptance-test/test/resources/features',
+			'cucumber.glue': 'cl.edu.template.microservice',
+			'cucumber.plugin': 'pretty,html:build/reports/cucumber/acceptance-test-report/index.html'
+	]
+
+	shouldRunAfter test
 }
 
 tasks.named('test') {
 	useJUnitPlatform()
+	finalizedBy jacocoTestReport
 }
 
-test {
-useJUnitPlatform()
-	finalizedBy jacocoTestReport // report is always generated after tests run
-
+jacoco {
+	toolVersion = "0.8.11"
 }
-
 
 def jacocoExcludes = [
 		'cl/edu/template/**/configuration/**',
@@ -64,12 +113,12 @@ def jacocoExcludes = [
 ]
 
 jacocoTestReport {
-	dependsOn test // tests are required to run before generating the report
+	dependsOn test
 	reports {
 		xml.required = true
 		csv.required = false
-		html.required = true // Puedes cambiar a false si no necesitas HTML
-		html.destination file("build/jacocoHtml")
+		html.required = true
+		html.outputLocation = layout.buildDirectory.dir('jacocoHtml')
 	}
 	afterEvaluate {
 		classDirectories.setFrom(files(classDirectories.files.collect {
