@@ -1,124 +1,80 @@
 package cl.edu.template.microservice.steps;
 
+import cl.edu.template.microservice.utils.ApiResponse;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.cucumber.java.Before;
-import io.cucumber.java.Scenario;
-import io.cucumber.java.en.Given;
-import io.cucumber.java.en.Then;
-import io.cucumber.java.en.When;
-import org.springframework.http.HttpStatusCode;
-import org.springframework.http.MediaType;
-import org.springframework.web.reactive.function.BodyInserters;
-import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
-import org.skyscreamer.jsonassert.JSONAssert;
+import io.cucumber.java.es.Entonces;
 import org.skyscreamer.jsonassert.JSONCompareMode;
-import org.springframework.stereotype.Component;
-import io.cucumber.spring.ScenarioScope;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.skyscreamer.jsonassert.JSONAssert;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import org.json.JSONException;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@ScenarioScope
-public class BadRequestSteps {
-
-    private final WebClient webClient;
-    private final ObjectMapper objectMapper;
-    private final int port;
+// Extiende de la nueva clase base CucumberBaseTest
+public class BadRequestSteps extends CucumberBaseTest {
 
     private String requestBody;
-    private String latestResponseBody;
-    private HttpStatusCode latestResponseStatus;
-    private Throwable latestError;
-    private String latestCurlCommand;
 
-    private Scenario scenario;
+    @Autowired
+    protected ObjectMapper objectMapper;
 
-    public BadRequestSteps(cl.edu.template.microservice.CucumberSpringContextConfiguration config, WebClient webClient, ObjectMapper objectMapper) {
-        this.port = config.getPort();
-        this.webClient = webClient;
-        this.objectMapper = objectMapper;
-    }
-
-    @Before
-    public void setupScenario(Scenario scenario) {
-        this.scenario = scenario;
-    }
-
-    @Given("el body del request:")
+    @io.cucumber.java.es.Dado("el body del request:")
     public void queElCuerpoDeLaPeticionEs(String requestBody) {
         this.requestBody = requestBody;
-        this.latestResponseBody = null;
-        this.latestResponseStatus = null;
-        this.latestError = null;
-        this.latestCurlCommand = null;
     }
 
-    @When("realizo una petición POST a {string}")
+    @io.cucumber.java.es.Cuando("realizo una petición POST a {string}")
     public void realizoUnaPeticionPOSTA(String path) {
-        String url = "http://localhost:" + port + path;
-        latestCurlCommand = "curl -X POST -H \"Content-Type: application/json\" -d '" + requestBody + "' " + url;
+        performPost(path, requestBody);
+    }
+
+    @io.cucumber.java.es.Entonces("la respuesta HTTP debe ser {int}")
+    public void laRespuestaHTTPDebeSer(int expectedStatus) {
+        assertNotNull(latestApiResponse, "La respuesta de la API no debería ser nula.");
+        assertNotNull(latestApiResponse.getStatusCode(), "El código de estado de la respuesta no debería ser nulo.");
+        assertEquals(expectedStatus, latestApiResponse.getStatusCode().value(),
+                "Se esperaba una respuesta con status " + expectedStatus + ", pero la petición falló con: " +
+                        (latestApiResponse.getError() != null ? latestApiResponse.getError().getMessage() : "Desconocido"));
+    }
+
+    /**
+     * Compara dos JSONs, ignorando el orden de los campos y los elementos de las listas.
+     * Utiliza la biblioteca JSONAssert para realizar una comparación robusta y flexible.
+     * @param expectedJson El JSON esperado en formato String.
+     */
+    @Entonces("el cuerpo de la respuesta JSON debe contener:")
+    public void elCuerpoDeLaRespuestaJSONDebeContener(String expectedJson) {
+        assertNotNull(latestApiResponse.getResponseBody(), "El cuerpo de la respuesta no debería ser nulo.");
+
+        // Verifica que el cuerpo de la respuesta no esté vacío antes de intentar la comparación JSON.
+        String responseBody = latestApiResponse.getResponseBody();
+        if (responseBody == null || responseBody.trim().isEmpty()) {
+            assertTrue(false, "El cuerpo de la respuesta está vacío, no se puede comparar con el JSON esperado.");
+        }
 
         try {
-            webClient.post()
-                    .uri(url)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(BodyInserters.fromValue(requestBody))
-                    .retrieve()
-                    .toEntity(String.class)
-                    .doOnSuccess(response -> {
-                        latestResponseStatus = response.getStatusCode();
-                        latestResponseBody = response.getBody();
-                        latestError = null;
-                    })
-                    .doOnError(WebClientResponseException.class, e -> {
-                        latestResponseStatus = e.getStatusCode();
-                        latestResponseBody = e.getResponseBodyAsString();
-                        latestError = e;
-                    })
-                    .doOnError(throwable -> {
-                        if (!(throwable instanceof WebClientResponseException)) {
-                            System.err.println("Error genérico en el flujo WebClient: " + throwable.getClass().getName() + " - " + throwable.getMessage());
-                            latestError = throwable;
-                        }
-                    })
-                    .block();
-        } catch (Exception e) {
-            System.err.println("Excepción capturada durante la llamada WebClient.block(): " + e.getClass().getName() + " - " + e.getMessage());
-            latestError = e;
-        } finally {
-            // <--- MODIFICACIÓN 1: Solo adjuntar el comando cURL aquí
-            if (scenario != null) {
-                if (latestCurlCommand != null && !latestCurlCommand.isEmpty()) {
-                    scenario.attach(latestCurlCommand, "text/plain", "Comando cURL Ejecutado");
-                }
-                // La respuesta obtenida NO se adjunta aquí ahora
-            }
+            JSONAssert.assertEquals(expectedJson, responseBody, JSONCompareMode.LENIENT);
+
+        } catch (AssertionError e) {
+            assertTrue(false,
+                    "El cuerpo de la respuesta no contiene el JSON esperado.\n" +
+                            "Esperado: " + expectedJson + "\n" +
+                            "Actual:   " + responseBody + "\n" +
+                            "Diferencias: " + e.getMessage());
+        } catch (JSONException e) {
+            assertTrue(false,
+                    "Error al parsear el JSON. Asegúrate de que el JSON esperado y el de la respuesta sean válidos.\n" +
+                            "Error: " + e.getMessage() + "\n" +
+                            "JSON de la Respuesta: " + responseBody);
         }
     }
 
-    @Then("la respuesta HTTP debe ser {int}")
-    public void laRespuestaHTTPDebeSer(int statusCode) {
-        if (latestResponseStatus != null) {
-            assertEquals(statusCode, latestResponseStatus.value(), "El código de estado HTTP no coincide");
-        } else if (latestError != null) {
-            fail("Se esperaba una respuesta con status " + statusCode + ", pero la petición falló con: " + latestError.getMessage());
-        } else {
-            fail("No se recibió ninguna respuesta ni error.");
-        }
+    @Override
+    public ApiResponse getApiResponse() {
+        return latestApiResponse;
     }
-
-    @Then("el cuerpo de la respuesta JSON debe contener:")
-    public void elCuerpoDeLaRespuestaJSONDebeContener(String expectedJson) throws Exception {
-        assertNotNull(latestResponseBody, "El cuerpo de la respuesta no puede ser nulo.");
-        JSONAssert.assertEquals(expectedJson, latestResponseBody, JSONCompareMode.LENIENT);
-
-        // <--- MODIFICACIÓN 2: Adjuntar la respuesta obtenida aquí
-        if (scenario != null && latestResponseBody != null && !latestResponseBody.isEmpty()) {
-            scenario.attach(latestResponseBody, "application/json", "Respuesta Obtenida");
-        }
-    }
-
-    // El método @AfterStep ha sido completamente eliminado en las versiones anteriores para este propósito.
 }

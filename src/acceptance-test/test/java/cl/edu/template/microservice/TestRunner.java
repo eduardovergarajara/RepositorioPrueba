@@ -5,12 +5,17 @@ import org.junit.platform.suite.api.ConfigurationParameter;
 import org.junit.platform.suite.api.IncludeEngines;
 import org.junit.platform.suite.api.SelectClasspathResource;
 import org.junit.platform.suite.api.Suite;
+import org.junit.platform.suite.api.SuiteDisplayName;
 
-// Clase de configuración para ejecutar Cucumber con JUnit 5 (JUnit Platform)
 @Suite
-@IncludeEngines("cucumber") // Indica a JUnit Platform que use el motor de Cucumber
-@SelectClasspathResource("features") // Especifica la ubicación de tus archivos .feature (relativo al classpath de tests)
-@ConfigurationParameter(key = Constants.GLUE_PROPERTY_NAME, value = "cl.edu.template.microservice") // Paquete base de tus Step Definitions y configuración de Spring
-@ConfigurationParameter(key = Constants.PLUGIN_PROPERTY_NAME, value = "pretty,html:build/reports/cucumber/acceptance-test-report/index.html") // Plugins para los reportes HTML
+@IncludeEngines("cucumber")
+@SelectClasspathResource("features")
+@SuiteDisplayName("Pruebas de Aceptación con Cucumber")
+@ConfigurationParameter(
+        key = Constants.GLUE_PROPERTY_NAME,
+        value = "cl.edu.template.microservice," + // Contiene CucumberSpringContextConfiguration
+                "cl.edu.template.microservice.steps" // No contiene TestAcceptanceConfig
+)
+@ConfigurationParameter(key = Constants.PLUGIN_PROPERTY_NAME, value = "pretty,html:build/reports/cucumber/acceptance-test-report/index.html")
 public class TestRunner {
 }
