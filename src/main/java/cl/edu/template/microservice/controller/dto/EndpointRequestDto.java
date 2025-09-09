@@ -1,18 +1,26 @@
-cGFja2FnZSBjbC5lZHUudGVtcGxhdGUubWljcm9zZXJ2aWNlLmNvbnRyb2xs
-ZXIuZHRvOwoKaW1wb3J0IGpha2FydGEudmFsaWRhdGlvbi5jb25zdHJhaW50
-cy5NYXg7CmltcG9ydCBqYWthcnRhLnZhbGlkYXRpb24uY29uc3RyYWludHMu
-TWluOwppbXBvcnQgamFrYXJ0YS52YWxpZGF0aW9uLmNvbnN0cmFpbnRzLk5v
-dE51bGw7CmltcG9ydCBqYWthcnRhLnZhbGlkYXRpb24uY29uc3RyYWludHMu
-U2l6ZTsKaW1wb3J0IGxvbWJvay5BbGxBcmdzQ29uc3RydWN0b3I7CmltcG9y
-dCBsb21ib2suR2V0dGVyOwppbXBvcnQgbG9tYm9rLk5vQXJnc0NvbnN0cnVj
-dG9yOwppbXBvcnQgbG9tYm9rLlNldHRlcjsKCkBHZXR0ZXIKQFNldHRlcgpA
-QWxsQXJnc0NvbnN0cnVjdG9yCkBOb0FyZ3NDb25zdHJ1Y3RvcgpwdWJsaWMg
-Y2xhc3MgRW5kcG9pbnRSZXF1ZXN0RHRvIHsKCiAgICBAU2l6ZShtaW4gPSAx
-LCBtYXggPSAxMCwgbWVzc2FnZSA9ICJFbCB0ZXh0byBkZWJlIGNvbnRlbmVy
-IGVudHJlIDEgeSAxMCBjYXJhY3RlcmVzIikKICAgIEBOb3ROdWxsKG1lc3Nh
-Z2UgPSAiRWwgY2FtcG8gdGV4dG8gbm8gcHVlZGUgc2VyIG51bGwiKQogICAg
-cHJpdmF0ZSBTdHJpbmcgdGV4dG87CgoKICAgIEBNYXgodmFsdWUgPSAxMCwg
-bWVzc2FnZSA9ICJFbCBuw7ptZXJvIGRlYmUgZXN0YXIgZW50cmUgMCB5IDEw
-IikKICAgIEBNaW4odmFsdWUgPSAwLCBtZXNzYWdlID0gIkVsIG7Dum1lcm8g
-ZGViZSBlc3RhciBlbnRyZSAwIHkgMTAiKQogICAgcHJpdmF0ZSBJbnRlZ2Vy
-IG51bWVybzsKfQo=
+package cl.edu.template.microservice.controller.dto;
+
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
+public class EndpointRequestDto {
+
+    @Size(min = 1, max = 10, message = "El texto debe contener entre 1 y 10 caracteres")
+    @NotNull(message = "El campo texto no puede ser null")
+    private String texto;
+
+
+    @Max(value = 10, message = "El número debe estar entre 0 y 10")
+    @Min(value = 0, message = "El número debe estar entre 0 y 10")
+    private Integer numero;
+}
